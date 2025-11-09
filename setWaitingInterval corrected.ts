@@ -2,6 +2,7 @@
  * Returns a function that sequentially provides delay values
  * from the given array, and then keeps returning the last one
  * once all have been used.
+ * window is removed for Node.js compatibility
  *
  * Example:
  *   const nextDelay = getLastUntilOneLeft([1000, 2000, 3000]);
@@ -37,8 +38,9 @@ function getLastUntilOneLeft(arr: number[]): () => number {
  *   setTimeout(() => manager.clearWaitingInterval(id), 7000);
  */
 export function createWaitingIntervalManager() {
-  // Keeps track of all active intervals
-  const map = new Map<number, number>();
+  // Keeps track of all active intervals, mapping IDs to their timeout handles
+
+  const map = new Map<number, NodeJS.Timeout>();
 
   // Unique incremental ID for each created interval
   let waitingIntervalId = 0;
@@ -66,13 +68,13 @@ export function createWaitingIntervalManager() {
     function internalHandler(): void {
       handler(...args); // Call user callback
       const delay = getNextDelay(); // Get next delay value
-      const timeoutId = window.setTimeout(internalHandler, delay);
+      const timeoutId = setTimeout(internalHandler, delay);
       map.set(id, timeoutId); // Track timeout for cleanup
     }
 
     // Schedule the first execution
     const firstDelay = getNextDelay();
-    const timeoutId = window.setTimeout(internalHandler, firstDelay);
+    const timeoutId = setTimeout(internalHandler, firstDelay);
     map.set(id, timeoutId);
 
     return id;
